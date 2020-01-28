@@ -41,8 +41,9 @@ private slots:
 
     void on_americaexpressRadio_toggled(bool checked);
 
+    void on_payPushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
-    QList <QRadioButton*> creditCardsRadioButtons;
 };
 #endif // MAINWINDOW_H

@@ -1,0 +1,5 @@
+*.app
+*.o
+*.pro.user
+Makefile
+.DS_Store

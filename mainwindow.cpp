@@ -1,4 +1,8 @@
 //Daniela Castro
+#include <QMessageBox>
+#include <QStringBuilder>
+
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -23,10 +27,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    this->creditCardsRadioButtons = {ui->visaRadio, ui->masterCardRadio, ui->discoverRadio, ui->americaexpressRadio};
     ui->creditCardLineEdit->setInputMask(CREDIT_CARD_MASKS.at(0));
 
     this->calculatePreviewPrice();
+
+    ui->dateEdit->setMinimumDate(QDate::currentDate());
+    ui->dateEdit->setMaximumDate(QDate::currentDate().addDays(365));
 }
 
 MainWindow::~MainWindow()
@@ -81,36 +87,104 @@ void MainWindow::on_parkingCheckBox_stateChanged(int arg1)
 
 void MainWindow::on_nextPushButton_clicked()
 {
+    QLocale* locale = new QLocale("en_US");
+
+    if(ui->customerName->text().length() == 0) {
+        QMessageBox msgBox;
+        msgBox.setText("Please enter a name for the reservation!");
+        msgBox.exec();
+
+        return;
+    }
+
     bool isQueen = this->ui->queenRadio->isChecked();
     bool isStandard = this->ui->standardRadio->isChecked();
     int index = 0;
 
-    if(!isQueen)
+    QString bedType = "2-Queen";
+    QString viewType = "Standard";
+
+    if(!isQueen) {
+
         index = 2;
-    if(!isStandard)
+        bedType = "1-King";
+    }
+
+    if(!isStandard) {
         index++;
+        viewType = "Atrium";
+    }
 
     double price = ROOM_PRICES[index];
     int nights = this->ui->nightsSpinBox->value();
     double roomPrice = price * nights;
     double tax = roomPrice * TAX_RATE/100;
+    QString parkingString = "No";
     bool hasParking = this->ui->parkingCheckBox->isChecked();
 
     double parking = 0;
-    if(hasParking)
+    if(hasParking) {
+        parkingString = "Yes";
         parking = PARKING_PRICE * nights;
+    }
+
+    int adults = this->ui->adultBox->value();
+    int children = this->ui->childrenBox->value();
+    int totalGuests = adults + children;
+    QString guests = locale->toString(adults);
+    if(adults == 1)
+        guests = guests % " Adult";
+    else
+        guests = guests % " Adults";
+    if(children == 1)
+        guests = guests % " " % locale->toString(children) % " Child";
+    else if(children > 0)
+        guests = guests % " " % locale->toString(children) % " Children";
+
+    if(isQueen && totalGuests > 4) {
+        QMessageBox msgBox;
+        msgBox.setText("There cannot be more than 4 guests in the 2-queen room!");
+        msgBox.exec();
+
+        return;
+    }
+
+    if(!isQueen && totalGuests > 3) {
+        QMessageBox msgBox;
+        msgBox.setText("There cannot be more than 3 guests in the 1-king room!");
+        msgBox.exec();
+
+        return;
+    }
+
+
+
+
+
 
     double resort = RESORT_FEE * nights;
 
     double total = roomPrice + tax + parking + resort;
 
-    QLocale* locale = new QLocale("en_US");
+    QDate date = this->ui->dateEdit->date();
 
     this->ui->roomCostLabel->setText(locale->toString(roomPrice));
     this->ui->taxLabel->setText(locale->toString(tax));
     this->ui->parkingLabel->setText(locale->toString(parking));
     this->ui->resortLabel->setText(locale->toString(resort));
     this->ui->totalCostLabel->setText(locale->toString(total));
+
+    this->ui->firstDayLabel->setText("");
+    this->ui->numberOfNightsLabel->setText(locale->toString(nights));
+    this->ui->roomTypeLabel->setText(bedType % " " % viewType);
+    this->ui->parkingLabel_2->setText(parkingString);
+    this->ui->guestsLabel->setText(guests);
+    this->ui->totalCostLabel_2->setText(locale->toString(total));
+    this->ui->firstDayLabel->setText(date.toString("MM/dd/yyyy"));
+
+
+
+
 
 
 
@@ -158,5 +232,32 @@ void MainWindow::on_americaexpressRadio_toggled(bool checked)
         return;
     ui->creditCardLineEdit->setInputMask(CREDIT_CARD_MASKS.at(3));
     ui->creditCardLineEdit->clear();
+
+}
+
+void MainWindow::on_payPushButton_clicked()
+{
+    QMessageBox msgBox;
+    int creditCardLength = 19;
+
+    if(ui->americaexpressRadio->isChecked())
+        creditCardLength = 17;
+    if(ui->creditCardLineEdit->text().length() != creditCardLength){
+        msgBox.setText("Please enter proper credit card number!");
+        msgBox.exec();
+
+        return;
+    }
+
+    msgBox.setText("Transaction successfully processed!");
+    msgBox.exec();
+
+    QString creditCard = ui->creditCardLineEdit->text();
+    QString fourDigits = creditCard.right(4);
+
+    ui->creditCardDigitsLabel->setText(fourDigits);
+    ui->stackedWidget->setCurrentIndex(2);
+
+
 
 }
