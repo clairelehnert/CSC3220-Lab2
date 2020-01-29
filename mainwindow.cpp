@@ -1,4 +1,7 @@
 //Daniela Castro
+//CSC3220-Lab2
+//Dr.Park
+
 #include <QMessageBox>
 #include <QStringBuilder>
 
